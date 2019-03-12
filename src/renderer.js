@@ -1,7 +1,8 @@
+import { mat4 } from '../../node_modules/gl-matrix/esm/index.js';
 import Shader from './shader.js';
 
 export default {
-    new: (context = null) => {
+    new(context = null) {
 
         if (context === null) {
             throw Error('You must pass a WebGL2 context to the renderer.');
@@ -42,15 +43,25 @@ export default {
                 gl.clearColor(1.0, 1.0, 1.0, 1.0);
             },
 
-            draw(delta) {
+            draw(delta, projectionMatrix, {
+                numberOfSamples = 25,
+                maximumDepth = 25,
+                antialiasing = true
+            }) {
 
                 totalTime += delta;
 
                 gl.uniform2f(shader.uniformLocations.screenDimensions, domElement.width, domElement.height);
-
                 gl.uniform1f(shader.uniformLocations.seed, Math.random());
                 gl.uniform1f(shader.uniformLocations.deltaTime, delta);
                 gl.uniform1f(shader.uniformLocations.totalTime, totalTime);
+
+                const inverseProjectionMatrix = mat4.invert(mat4.create(), projectionMatrix);
+                gl.uniformMatrix4fv(shader.uniformLocations.inverseProjection, false, inverseProjectionMatrix);
+
+                gl.uniform1i(shader.uniformLocations.numberOfSamples, numberOfSamples);
+                gl.uniform1i(shader.uniformLocations.maximumDepth, maximumDepth);
+                gl.uniform1f(shader.uniformLocations.antialiasing, antialiasing ? 1.0 : 0.0);
 
                 gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4); // draw fullscreen quad.
 
