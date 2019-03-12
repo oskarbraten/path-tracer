@@ -1,0 +1,15 @@
+{
+  "name": "path-tracer",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "dependencies": {
+    "gl-matrix": "^3.0.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Oskar Bråten",
+  "license": "ISC"
+}
