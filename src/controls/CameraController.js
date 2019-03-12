@@ -1,5 +1,5 @@
 
-import { vec3, quat } from 'gl-matrix';
+import { vec3, quat } from '../../node_modules/gl-matrix/esm/index.js';
 
 export default class CameraController {
     constructor(camera) {

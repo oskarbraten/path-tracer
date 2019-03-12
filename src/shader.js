@@ -20,7 +20,8 @@ export default {
                 seed: context.getUniformLocation(program, 'seed'),
                 numberOfSamples: context.getUniformLocation(program, 'number_of_samples'),
                 maximumDepth: context.getUniformLocation(program, 'maximum_depth'),
-                antialiasing: context.getUniformLocation(program, 'antialiasing')
+                antialiasing: context.getUniformLocation(program, 'antialiasing'),
+                numberOfSpheres: context.getUniformLocation(program, 'number_of_spheres')
             }
         };
     }

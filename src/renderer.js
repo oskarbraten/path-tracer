@@ -1,5 +1,7 @@
-import { mat4 } from '../../node_modules/gl-matrix/esm/index.js';
+import { vec3, mat4 } from '../../node_modules/gl-matrix/esm/index.js';
 import Shader from './shader.js';
+
+const IS_LITTLE_ENDIAN = new Uint8Array(new Uint32Array([0x12345678]).buffer)[0] === 0x78;
 
 export default {
     new(context = null) {
@@ -22,14 +24,20 @@ export default {
 
         let totalTime = 0;
 
-        // const lightsUniformBuffer = gl.createBuffer();
-        // gl.bindBufferBase(gl.UNIFORM_BUFFER, UBO_BINDING.LIGHTS, lightsUniformBuffer);
+        // UBO:
+        const worldBuffer = gl.createBuffer();
+        gl.bindBufferBase(gl.UNIFORM_BUFFER, 0, worldBuffer);
 
-        // const lightsBuffer = new ArrayBuffer((MAX_NUMBER_OF_LIGHTS * 16) * 8); // allocate buffer holding the lights.
-        // const lightsBufferView = new DataView(lightsBuffer);
+        const MAXIMUM_NUMBER_OF_SPHERES = 100;
+        const sphereBuffer = new ArrayBuffer((MAXIMUM_NUMBER_OF_SPHERES * 4) * 8);
+        const sphereBufferView = new DataView(sphereBuffer);
 
-        // instantiate buffer on GPU.
-        // gl.bufferData(gl.UNIFORM_BUFFER, lightsBuffer, gl.DYNAMIC_DRAW);
+        // fill buffer on GPU.
+        gl.bufferData(gl.UNIFORM_BUFFER, sphereBuffer, gl.DYNAMIC_DRAW);
+
+        // bind block:
+        gl.uniformBlockBinding(shader.program, gl.getUniformBlockIndex(shader.program, 'WorldBlock'), 0);
+
 
         const renderer = {
 
@@ -43,7 +51,7 @@ export default {
                 gl.clearColor(1.0, 1.0, 1.0, 1.0);
             },
 
-            draw(delta, projectionMatrix, {
+            draw(delta, camera, world, {
                 numberOfSamples = 25,
                 maximumDepth = 25,
                 antialiasing = true
@@ -56,7 +64,7 @@ export default {
                 gl.uniform1f(shader.uniformLocations.deltaTime, delta);
                 gl.uniform1f(shader.uniformLocations.totalTime, totalTime);
 
-                const inverseProjectionMatrix = mat4.invert(mat4.create(), projectionMatrix);
+                const inverseProjectionMatrix = mat4.invert(mat4.create(), camera.projectionMatrix);
                 gl.uniformMatrix4fv(shader.uniformLocations.inverseProjection, false, inverseProjectionMatrix);
 
                 gl.uniform1i(shader.uniformLocations.numberOfSamples, numberOfSamples);
@@ -65,12 +73,32 @@ export default {
 
                 gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4); // draw fullscreen quad.
 
-                // UBO:
-                //gl.uniformBlockBinding(shader.program, gl.getUniformBlockIndex(shader.program, 'LightBlock'), UBO_BINDING.LIGHT);
 
-                // vertex uniforms:
-                //const viewMatrix = mat4.invert(mat4.create(), cameraNode.worldMatrix);
-                // gl.uniform1i(shader.uniformLocations.numberOfLights, numberOfLights);
+                gl.uniform1i(shader.uniformLocations.numberOfSpheres, world.length);
+
+                const viewMatrix = mat4.invert(mat4.create(), camera.node.worldMatrix);
+
+                for (let i = 0; i < world.length && i < 100; i++) {
+
+                    const { node, radius } = world[i];
+
+                    const modelViewMatrix = mat4.multiply(mat4.create(), viewMatrix, node.worldMatrix);
+
+                    const position = vec3.fromValues(modelViewMatrix[12], modelViewMatrix[13], modelViewMatrix[14]);
+
+                    // PACKING:
+                    // position: vec3
+                    // radius: f32
+                    const offset = i * 4;
+                    sphereBufferView.setFloat32((offset + 0) * 4, position[0], IS_LITTLE_ENDIAN);
+                    sphereBufferView.setFloat32((offset + 1) * 4, position[1], IS_LITTLE_ENDIAN);
+                    sphereBufferView.setFloat32((offset + 2) * 4, position[2], IS_LITTLE_ENDIAN);
+                    sphereBufferView.setFloat32((offset + 3) * 4, radius, IS_LITTLE_ENDIAN);
+
+                }
+
+                // update buffer:
+                gl.bufferSubData(gl.UNIFORM_BUFFER, 0, sphereBuffer);
             }
         };
 

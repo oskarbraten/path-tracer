@@ -22,11 +22,11 @@ struct sphere {
     float radius;
 };
 
-const int NUMBER_OF_SPHERES = 2;
-const sphere WORLD[NUMBER_OF_SPHERES] = sphere[NUMBER_OF_SPHERES](
-	sphere(vec3(0.0, 0.0, -1.0), 0.5),
-	sphere(vec3(0.0, -100.5, -1.0), 100.0)
-);
+layout(std140) uniform WorldBlock {
+    sphere spheres[100];
+};
+
+uniform int number_of_spheres;
 
 float rand_seed = 0.0;
 
@@ -91,8 +91,8 @@ bool intersect_world(ray r, float t_min, float t_max, out hit_record record) {
     bool intersected = false;
     float closest = t_max;
 
-    for (int i = 0; i < NUMBER_OF_SPHERES; i++) {
-        sphere s = WORLD[i];
+    for (int i = 0; i < number_of_spheres; i++) {
+        sphere s = spheres[i];
         if (intersect(s, r, t_min, closest, temp_record)) {
             intersected = true;
             closest = temp_record.t;

@@ -5,10 +5,6 @@ export default {
         parent = null,
         children = [],
 
-        mesh = null,
-        camera = null,
-        light = null,
-
         rotation = quat.create(),
         translation = vec3.fromValues(0, 0, 0),
         scale = vec3.fromValues(1, 1, 1),
@@ -20,10 +16,6 @@ export default {
         const node = {
 
             children,
-
-            mesh,
-            camera,
-            light,
 
             localMatrix: mat4.create(),
             worldMatrix: mat4.create(),
