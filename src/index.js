@@ -5,6 +5,7 @@ import Renderer from './renderer.js';
 import Node from './core/node.js';
 import Sphere from './primitives/sphere.js';
 import Camera from './core/camera.js';
+import { vec3 } from '../../node_modules/gl-matrix/esm/index.js';
 
 const gl = document.createElement('canvas').getContext('webgl2');
 const renderer = Renderer.new(gl);
@@ -16,6 +17,10 @@ const world = Node.new();
 
 const cameraNode = Node.new({ parent: world });
 const camera = Camera.new(cameraNode, window.innerWidth / window.innerHeight);
+
+cameraNode.applyRotationX(-Math.PI * 0.15);
+cameraNode.applyTranslation(0.0, 5.0, 10.0);
+
 
 window.addEventListener('resize', () => {
     renderer.setSize(window.innerWidth, window.innerHeight);
@@ -50,7 +55,7 @@ let move = {
     backward: false,
     left: false,
     right: false,
-    speed: 0.001
+    speed: 0.004
 };
 
 
@@ -91,11 +96,25 @@ const gui = new dat.GUI();
 gui.add(parameters, 'numberOfSamples', 1, 180);
 gui.add(parameters, 'maximumDepth', 1, 100);
 gui.add(parameters, 'antialiasing');
+gui.add(move, 'speed', 0.001, 0.01).name("Movement speed");
 
 let spheres = [
-    Sphere.new(Node.new({ parent: world, translation: [0.0, 0.0, -1.0] }), 0.5),
-    Sphere.new(Node.new({ parent: world, translation: [0.0, -100.5, -1.0] }), 100.0)
+    Sphere.new(Node.new({ parent: world, translation: [0.0, 0.0, -1.0] }), 0.5, {
+        type: 0,
+        albedo: vec3.fromValues(1.0, 1.0, 1.0)
+    }),
+    Sphere.new(Node.new({ parent: world, translation: [0.0, -500.5, -1.0] }), 500.0, {
+        type: 0,
+        albedo: vec3.fromValues(0.75, 0.75, 0.75)
+    })
 ];
+
+for (let i = 0; i < 20; i++) {
+    let radius = 0.1 + (Math.random() * 1.2);
+    let position = vec3.fromValues((Math.random() * 20) - 10, (Math.random() * 2) - 0.5, (Math.random() * 20) - 10);
+
+    spheres.push(Sphere.new(Node.new({ parent: world, translation: position }), radius));
+}
 
 
 let then = 0;

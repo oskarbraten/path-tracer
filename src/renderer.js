@@ -29,7 +29,9 @@ export default {
         gl.bindBufferBase(gl.UNIFORM_BUFFER, 0, worldBuffer);
 
         const MAXIMUM_NUMBER_OF_SPHERES = 100;
-        const sphereBuffer = new ArrayBuffer((MAXIMUM_NUMBER_OF_SPHERES * 4) * 8);
+
+        const NUMBER_OF_BYTES_PER_SPHERE = 12; // needs to be a factor of 4.
+        const sphereBuffer = new ArrayBuffer((MAXIMUM_NUMBER_OF_SPHERES * 12) * 8);
         const sphereBufferView = new DataView(sphereBuffer);
 
         // fill buffer on GPU.
@@ -71,8 +73,6 @@ export default {
                 gl.uniform1i(shader.uniformLocations.maximumDepth, maximumDepth);
                 gl.uniform1f(shader.uniformLocations.antialiasing, antialiasing ? 1.0 : 0.0);
 
-                gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4); // draw fullscreen quad.
-
 
                 gl.uniform1i(shader.uniformLocations.numberOfSpheres, world.length);
 
@@ -80,7 +80,7 @@ export default {
 
                 for (let i = 0; i < world.length && i < 100; i++) {
 
-                    const { node, radius } = world[i];
+                    const { node, radius, material } = world[i];
 
                     const modelViewMatrix = mat4.multiply(mat4.create(), viewMatrix, node.worldMatrix);
 
@@ -89,16 +89,33 @@ export default {
                     // PACKING:
                     // position: vec3
                     // radius: f32
-                    const offset = i * 4;
+                    // albedo: vec3
+                    // fuzz: f32
+                    // refractive_index: f32
+                    // type: int
+
+                    const offset = i * 12;
+
                     sphereBufferView.setFloat32((offset + 0) * 4, position[0], IS_LITTLE_ENDIAN);
                     sphereBufferView.setFloat32((offset + 1) * 4, position[1], IS_LITTLE_ENDIAN);
                     sphereBufferView.setFloat32((offset + 2) * 4, position[2], IS_LITTLE_ENDIAN);
                     sphereBufferView.setFloat32((offset + 3) * 4, radius, IS_LITTLE_ENDIAN);
 
+                    sphereBufferView.setFloat32((offset + 4) * 4, material.albedo[0], IS_LITTLE_ENDIAN);
+                    sphereBufferView.setFloat32((offset + 5) * 4, material.albedo[1], IS_LITTLE_ENDIAN);
+                    sphereBufferView.setFloat32((offset + 6) * 4, material.albedo[2], IS_LITTLE_ENDIAN);
+
+                    sphereBufferView.setFloat32((offset + 7) * 4, material.fuzz, IS_LITTLE_ENDIAN);
+                    sphereBufferView.setFloat32((offset + 8) * 4, material.refractiveIndex, IS_LITTLE_ENDIAN);
+                    sphereBufferView.setInt32((offset + 9) * 4, material.type, IS_LITTLE_ENDIAN);
+
                 }
 
                 // update buffer:
                 gl.bufferSubData(gl.UNIFORM_BUFFER, 0, sphereBuffer);
+
+                // draw fullscreen quad:
+                gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
             }
         };
 

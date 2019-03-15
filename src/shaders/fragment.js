@@ -20,6 +20,11 @@ uniform float antialiasing;
 struct sphere {
     vec3 center;
     float radius;
+
+    vec3 albedo;
+    float fuzz;
+    float refractive_index;
+    int type; /* 0: diffuse, 1: metal, 2: dielectric */
 };
 
 layout(std140) uniform WorldBlock {
@@ -48,6 +53,7 @@ struct hit_record {
     float t;
     vec3 position;
     vec3 normal;
+    int index;
 };
 
 struct ray {
@@ -59,7 +65,30 @@ vec3 point_at(ray r, float t) {
     return r.origin + t*r.direction;
 }
 
-bool intersect(sphere s, ray r, float t_min, float t_max, out hit_record record) {
+float schlick(float cosine, float refractive_index) {
+    float r0 = (1.0 - refractive_index) / (1.0 + refractive_index);
+    r0 = r0 * r0;
+    return r0 + (1.0 - r0) * pow((1.0 - cosine), 5.0);
+}
+
+// TODO: use built-in function instead.
+bool refract_2(vec3 v, vec3 n, float ni_over_nt, out vec3 refracted) {
+    vec3 uv = normalize(v);
+    float dt = dot(uv, n);
+    float discriminant = 1.0 - ni_over_nt * ni_over_nt*(1.0 - dt * dt);
+    if (discriminant > 0.0) {
+        refracted = ni_over_nt * (uv - n * dt) - n * sqrt(discriminant);
+        return true;
+    }
+    
+    return false;
+}
+
+bool intersect(int index, ray r, float t_min, float t_max, out hit_record record) {
+
+    sphere s = spheres[index];
+    record.index = index;
+
     vec3 oc = r.origin - s.center;
     float a = dot(r.direction, r.direction);
     float b = dot(oc, r.direction);
@@ -84,6 +113,65 @@ bool intersect(sphere s, ray r, float t_min, float t_max, out hit_record record)
         }
     }
     return false;
+
+}
+
+bool scatter(int index, ray r, hit_record record, out vec3 attenuation, out ray scattered) {
+
+    sphere s = spheres[index];
+
+    if (s.type == 1) {
+        vec3 reflected = reflect(normalize(r.direction), record.normal);
+        scattered = ray(record.position, reflected + s.fuzz * random_in_unit_sphere());
+        attenuation = s.albedo;
+        return (dot(scattered.direction, record.normal) > 0.0);
+    }
+    else if (s.type == 2) {
+        vec3 outward_normal;
+        vec3 reflected = reflect(normalize(r.direction), record.normal);
+
+        float ni_over_nt;
+        attenuation = vec3(1.0, 1.0, 1.0);
+
+        float cosine;
+
+        if (dot(r.direction, record.normal) > 0.0) {
+            outward_normal = -record.normal;
+            ni_over_nt = s.refractive_index;
+            cosine = dot(r.direction, record.normal) / length(r.direction);
+            cosine = sqrt(1.0 - s.refractive_index * s.refractive_index * (1.0 - cosine * cosine));
+        }
+        else {
+            outward_normal = record.normal;
+            ni_over_nt = 1.0 / s.refractive_index;
+            cosine = -dot(r.direction, record.normal) / length(r.direction);
+        }
+
+        vec3 refracted;
+
+        float reflect_prob;
+        if (refract_2(r.direction, outward_normal, ni_over_nt, refracted)) {
+            reflect_prob = schlick(cosine, s.refractive_index);
+        }
+        else {
+            reflect_prob = 1.0;
+        }
+
+        if (rand() < reflect_prob) {
+            scattered = ray(record.position, reflected);
+        }
+        else {
+            scattered = ray(record.position, refracted);
+        }
+
+        return true;
+    }
+    else {
+        vec3 target = record.position + record.normal + random_in_unit_sphere();
+        scattered = ray(record.position, target - record.position);
+        attenuation = s.albedo;
+        return true;
+    }
 }
 
 bool intersect_world(ray r, float t_min, float t_max, out hit_record record) {
@@ -92,12 +180,13 @@ bool intersect_world(ray r, float t_min, float t_max, out hit_record record) {
     float closest = t_max;
 
     for (int i = 0; i < number_of_spheres; i++) {
-        sphere s = spheres[i];
-        if (intersect(s, r, t_min, closest, temp_record)) {
+        
+        if (intersect(i, r, t_min, closest, temp_record)) {
             intersected = true;
             closest = temp_record.t;
             record = temp_record;
         }
+
     }
 
     return intersected;
@@ -109,6 +198,7 @@ vec3 background(ray r) {
 }
 
 vec3 trace(ray r) {
+
     vec3 color = vec3(1.0, 1.0, 1.0);
 
     hit_record record;
@@ -116,11 +206,14 @@ vec3 trace(ray r) {
     int i = 0;
     while ((i <= maximum_depth) && intersect_world(r, 0.001, 100000.0, record)) {
 
-        vec3 target = record.position + record.normal + random_in_unit_sphere();
-        r = ray(record.position, target - record.position);
+        ray scattered;
+		vec3 attenuation;
 
-        color *= 0.5; // absorbs 50% of the energy.
+		scatter(record.index, r, record, attenuation, scattered);
 
+		r = scattered;
+        color *= attenuation; // may absorb some energy.
+        
         i += 1;
     }
 
