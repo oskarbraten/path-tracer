@@ -1,4 +1,4 @@
-import { vec3, mat4, quat } from '../../node_modules/gl-matrix/esm/index.js';
+import { vec3, mat4, quat } from '../../lib/gl-matrix/index.js';
 
 export default {
     new({

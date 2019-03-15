@@ -1,11 +1,11 @@
-import * as dat from '../node_modules/dat.gui/build/dat.gui.module.js';
+import * as dat from '../lib/dat.gui.module.js';
 import CameraController from './controls/CameraController.js';
 
 import Renderer from './renderer.js';
 import Node from './core/node.js';
 import Sphere from './primitives/sphere.js';
 import Camera from './core/camera.js';
-import { vec3 } from '../../node_modules/gl-matrix/esm/index.js';
+import { vec3 } from '../lib/gl-matrix/index.js';
 
 const gl = document.createElement('canvas').getContext('webgl2');
 const renderer = Renderer.new(gl);

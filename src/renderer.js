@@ -1,4 +1,4 @@
-import { vec3, mat4 } from '../../node_modules/gl-matrix/esm/index.js';
+import { vec3, mat4 } from '../lib/gl-matrix/index.js';
 import Shader from './shader.js';
 
 const IS_LITTLE_ENDIAN = new Uint8Array(new Uint32Array([0x12345678]).buffer)[0] === 0x78;

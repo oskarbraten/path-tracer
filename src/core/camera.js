@@ -1,4 +1,4 @@
-import { mat4 } from '../../node_modules/gl-matrix/esm/index.js';
+import { mat4 } from '../../lib/gl-matrix/index.js';
 
 export default {
     new(node, aspectRatio, yfov = 1.0472, zfar = null, znear = 1.0) {

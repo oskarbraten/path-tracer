@@ -1,4 +1,4 @@
-import { vec3 } from '../../node_modules/gl-matrix/esm/index.js';
+import { vec3 } from '../../lib/gl-matrix/index.js';
 import Node from '../core/node.js';
 
 export default {
