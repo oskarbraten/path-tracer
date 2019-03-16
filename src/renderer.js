@@ -31,7 +31,7 @@ export default {
         const MAXIMUM_NUMBER_OF_SPHERES = 100;
 
         const NUMBER_OF_BYTES_PER_SPHERE = 12; // needs to be a factor of 4.
-        const sphereBuffer = new ArrayBuffer((MAXIMUM_NUMBER_OF_SPHERES * 12) * 8);
+        const sphereBuffer = new ArrayBuffer((MAXIMUM_NUMBER_OF_SPHERES * NUMBER_OF_BYTES_PER_SPHERE) * 8);
         const sphereBufferView = new DataView(sphereBuffer);
 
         // fill buffer on GPU.
@@ -73,7 +73,7 @@ export default {
                 gl.uniform1i(shader.uniformLocations.maximumDepth, maximumDepth);
                 gl.uniform1f(shader.uniformLocations.antialiasing, antialiasing ? 1.0 : 0.0);
 
-
+                
                 gl.uniform1i(shader.uniformLocations.numberOfSpheres, world.length);
 
                 const viewMatrix = mat4.invert(mat4.create(), camera.node.worldMatrix);
@@ -94,7 +94,7 @@ export default {
                     // refractive_index: f32
                     // type: int
 
-                    const offset = i * 12;
+                    const offset = i * NUMBER_OF_BYTES_PER_SPHERE;
 
                     sphereBufferView.setFloat32((offset + 0) * 4, position[0], IS_LITTLE_ENDIAN);
                     sphereBufferView.setFloat32((offset + 1) * 4, position[1], IS_LITTLE_ENDIAN);
