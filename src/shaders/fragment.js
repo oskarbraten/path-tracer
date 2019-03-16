@@ -7,6 +7,8 @@ in vec3 ray_direction;
 in vec2 uv;
 out vec4 fColor;
 
+uniform mat4 camera_matrix;
+
 uniform vec2 screen_dimensions;
 uniform float delta_time;
 uniform float total_time;
@@ -193,7 +195,9 @@ bool intersect_world(ray r, float t_min, float t_max, out hit_record record) {
 }
 
 vec3 background(ray r) {
-    float t = 0.5 * (normalize(r.direction).y + 1.0);
+    // TODO: investigate if it is better to do path tracing in world space.
+    vec3 direction = (camera_matrix * vec4(r.direction, 0.0)).xyz;
+    float t = 0.5 * (normalize(direction).y + 1.0);
     return mix(vec3(1.0, 1.0, 1.0), vec3(0.5, 0.7, 1.0), t);
 }
 

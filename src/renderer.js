@@ -68,6 +68,7 @@ export default {
 
                 const inverseProjectionMatrix = mat4.invert(mat4.create(), camera.projectionMatrix);
                 gl.uniformMatrix4fv(shader.uniformLocations.inverseProjection, false, inverseProjectionMatrix);
+                gl.uniformMatrix4fv(shader.uniformLocations.cameraMatrix, false, camera.node.worldMatrix);
 
                 gl.uniform1i(shader.uniformLocations.numberOfSamples, numberOfSamples);
                 gl.uniform1i(shader.uniformLocations.maximumDepth, maximumDepth);

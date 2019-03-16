@@ -14,6 +14,7 @@ export default {
             program,
             uniformLocations: {
                 inverseProjection: context.getUniformLocation(program, 'inverse_projection'),
+                cameraMatrix: context.getUniformLocation(program, 'camera_matrix'),
                 screenDimensions: context.getUniformLocation(program, 'screen_dimensions'),
                 deltaTime: context.getUniformLocation(program, 'delta_time'),
                 totalTime: context.getUniformLocation(program, 'total_time'),
