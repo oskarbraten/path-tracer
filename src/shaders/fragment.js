@@ -244,5 +244,5 @@ void main() {
 
     color /= float(number_of_samples);
 
-    fColor = vec4(color, 1.0);
+    fColor = vec4(sqrt(color), 1.0);
 }`;
